@@ -738,6 +738,13 @@ workflows:
           timeout: 10m
 
       - test-driver:
+          name: be-tests-redshiftspectrum
+          requires:
+            - be-tests
+          driver: redshiftspectrum
+          timeout: 10m
+
+      - test-driver:
           name: be-tests-snowflake
           requires:
             - be-tests
