@@ -29,10 +29,10 @@ class ExpressionMBQLCompilerVisitor extends ExpressionCstVisitor {
   }
 
   additionExpression(ctx) {
-    return this._collapsibleOperatorExpression(ctx);
+    return this._collapseOperators(ctx.operands, ctx.AdditiveOperator);
   }
   multiplicationExpression(ctx) {
-    return this._collapsibleOperatorExpression(ctx);
+    return this._collapseOperators(ctx.operands, ctx.MultiplicativeOperator);
   }
 
   functionExpression(ctx) {
@@ -105,35 +105,32 @@ class ExpressionMBQLCompilerVisitor extends ExpressionCstVisitor {
     return this.visit(ctx.booleanExpression);
   }
   booleanExpression(ctx) {
-    return this._collapsibleOperatorExpression(ctx);
+    return this._collapseOperators(ctx.operands, ctx.BooleanOperator);
   }
 
   binaryOperatorExpression(ctx) {
-    const operator = ctx.operator[0].image.toLowerCase();
-    const lhs = this.visit(ctx.lhs);
-    const rhs = this.visit(ctx.rhs);
-    return [operator, lhs, rhs];
+    return [
+      ctx.operators[0].image.toLowerCase(),
+      this.visit(ctx.operands[0]),
+      this.visit(ctx.operands[1]),
+    ];
   }
   unaryOperatorExpression(ctx) {
-    const operator = ctx.operator[0].image.toLowerCase();
-    const operand = this.visit(ctx.operand);
-    return [operator, operand];
+    return [ctx.operators[0].image.toLowerCase(), this.visit(ctx.operands[0])];
   }
 
   // HELPERS:
 
-  _collapsibleOperatorExpression(ctx) {
-    let initial = this.visit(ctx.lhs);
-    if (ctx.rhs) {
-      for (const index of ctx.rhs.keys()) {
-        const operator = ctx.operator[index].image.toLowerCase();
-        const operand = this.visit(ctx.rhs[index]);
-        // collapse multiple consecutive operators into a single MBQL statement
-        if (Array.isArray(initial) && initial[0] === operator) {
-          initial.push(operand);
-        } else {
-          initial = [operator, initial, operand];
-        }
+  _collapseOperators(operands, operators) {
+    let initial = this.visit(operands[0]);
+    for (let i = 1; i < operands.length; i++) {
+      const operator = operators[i - 1].image.toLowerCase();
+      const operand = this.visit(operands[i]);
+      // collapse multiple consecutive operators into a single MBQL statement
+      if (Array.isArray(initial) && initial[0] === operator) {
+        initial.push(operand);
+      } else {
+        initial = [operator, initial, operand];
       }
     }
     return initial;

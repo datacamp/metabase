@@ -21,11 +21,17 @@ describe("metabase/lib/expressions/compile", () => {
         for (const [source, mbql, description] of cases) {
           if (mbql) {
             it(`should compile ${description}`, () => {
+              const start = Date.now();
               expect(compile(source, opts)).toEqual(mbql);
+              const elapsed = Date.now() - start;
+              expect(elapsed).toBeLessThan(500);
             });
           } else {
             it(`should not compile ${description}`, () => {
+              const start = Date.now();
               expect(() => compile(source, opts)).toThrow();
+              const elapsed = Date.now() - start;
+              expect(elapsed).toBeLessThan(500);
             });
           }
         }
@@ -51,6 +57,17 @@ describe("metabase/lib/expressions/compile", () => {
         "avg",
         ["field-id", 1],
       ]);
+    });
+
+    it("should fail to compile within 250ms", () => {
+      const start = Date.now();
+      try {
+        compile("Share((");
+        expect(true).toBe(false);
+      } catch (e) {
+        const end = Date.now();
+        expect(end - start).toBeLessThan(250);
+      }
     });
   });
 });

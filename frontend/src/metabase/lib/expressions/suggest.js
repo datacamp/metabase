@@ -28,31 +28,12 @@ import {
   Minus,
   Identifier,
   IdentifierString,
+  getImage,
+  isTokenType,
+  getSubTokenTypes,
 } from "./lexer";
 
-import memoize from "lodash.memoize";
-
 import { ExpressionDimension } from "metabase-lib/lib/Dimension";
-
-function getImage(token) {
-  return token.image;
-}
-
-const tokensByIdx = new Map(allTokens.map(t => [t.tokenTypeIdx, t]));
-
-const isTokenType = memoize(
-  (child, ancestor) => {
-    return (
-      child === ancestor ||
-      child.CATEGORIES.some(token => isTokenType(token, ancestor))
-    );
-  },
-  (child, ancestor) => `${child.tokenTypeIdx},${ancestor.tokenTypeIdx}`,
-);
-
-function getSubTokenTypes(TokenClass) {
-  return TokenClass.categoryMatches.map(idx => tokensByIdx.get(idx));
-}
 
 function getTokenSource(TokenClass) {
   // strip regex escaping, e.x. "\+" -> "+"
@@ -63,6 +44,8 @@ export function suggest(
   source,
   { query, startRule, index = source.length, expressionName } = {},
 ) {
+  if (source) return [];
+
   const partialSource = source.slice(0, index);
   const lexResult = lexer.tokenize(partialSource);
   if (lexResult.errors.length > 0) {
